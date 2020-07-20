@@ -573,6 +573,45 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 	}
 }
 
+func TestClassLiteralParsing(t *testing.T) {
+	input := `
+class Foobar {
+	function foo() { }
+
+	function bar() { }
+}`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d\n", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	class, ok := statement.Expression.(*ast.ClassLiteral)
+
+	if !ok {
+		t.Fatalf("statement.Expression is not ast.ClassLiteral. got=%T", statement.Expression)
+	}
+
+	if class.Name != "Foobar" {
+		t.Fatalf("class literal name wrong. expected 'Foobar', got=%s\n", class.Name)
+	}
+
+	if len(class.Methods) != 2 {
+		t.Fatalf("class literal methods wrong. expected 2, got=%d\n", len(class.Methods))
+	}
+}
+
 func TestFunctionLiteralParsing(t *testing.T) {
 	input := `function(x, y) { x + y; }`
 

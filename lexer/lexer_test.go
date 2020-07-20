@@ -46,6 +46,7 @@ true or false
 1 <= 1
 // This is a single line comment
 foo.bar
+class NeuralNetwork {}
 `
 
 	tests := []struct {
@@ -159,6 +160,10 @@ foo.bar
 		{token.IDENTIFIER, "foo"},
 		{token.DOT, "."},
 		{token.IDENTIFIER, "bar"},
+		{token.CLASS, "class"},
+		{token.IDENTIFIER, "NeuralNetwork"},
+		{token.LBRACE, "{"},
+		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}
 

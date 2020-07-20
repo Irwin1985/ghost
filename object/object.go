@@ -5,6 +5,7 @@ type ObjectType string
 const (
 	BOOLEAN_OBJ      = "BOOLEAN"
 	BUILTIN_OBJ      = "BUILTIN"
+	CLASS_OBJ        = "CLASS"
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
 	LIST_OBJ         = "LIST"

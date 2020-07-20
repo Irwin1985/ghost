@@ -121,6 +121,13 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return evalIndexExpression(left, index)
+	case *ast.ClassLiteral:
+		name := node.Name
+		class := &object.Class{Env: env}
+
+		env.Set(name, class)
+
+		return class
 	case *ast.FunctionLiteral:
 		parameters := node.Parameters
 		body := node.Body
@@ -368,10 +375,30 @@ func evalIndexExpression(left object.Object, index object.Object) object.Object 
 		return evalListIndexExpression(left, index)
 	case left.Type() == object.MAP_OBJ:
 		return evalMapIndexExpression(left, index)
+	// case left.Type() == object.CLASS_OBJ:
+	// 	return evalClassIndexExpression(left, index)
 	default:
 		return newError("index operator not supported: %s", left.Type())
 	}
 }
+
+// func evalClassIndexExpression(class object.Object, index object.Object) object.Object {
+// classObject := class.(*object.Class)
+
+// key, ok := index.(object.Mappable)
+
+// if !ok {
+// 	return newError("unusable as map key: %s", index.Type())
+// }
+
+// pair, ok := mapObject.Pairs[key.MapKey()]
+
+// if !ok {
+// 	return NULL
+// }
+
+// return pair.Value
+// }
 
 func evalListIndexExpression(list object.Object, index object.Object) object.Object {
 	listObject := list.(*object.List)
@@ -450,21 +477,23 @@ func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) objec
 	return NULL
 }
 
-func applyFunction(fn object.Object, arguments []object.Object) object.Object {
-	switch fn := fn.(type) {
+func applyFunction(callable object.Object, arguments []object.Object) object.Object {
+	switch callable := callable.(type) {
+	case *object.Class:
+		return callable
 	case *object.Function:
-		extendedEnv := extendFunctionEnv(fn, arguments)
-		evaluated := Eval(fn.Body, extendedEnv)
+		extendedEnv := extendFunctionEnv(callable, arguments)
+		evaluated := Eval(callable.Body, extendedEnv)
 
 		return unwrapReturnValue(evaluated)
 	case *object.Builtin:
-		if result := fn.Fn(arguments...); result != nil {
+		if result := callable.Fn(arguments...); result != nil {
 			return result
 		}
 
 		return NULL
 	default:
-		return newError("not a function: %s", fn.Type())
+		return newError("not a callable: %s", callable.Type())
 	}
 }
 

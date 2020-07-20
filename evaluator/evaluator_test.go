@@ -190,6 +190,18 @@ func TestNamedFunctionStatements(t *testing.T) {
 	}
 }
 
+func TestClassObject(t *testing.T) {
+	input := "class Foobar { }"
+
+	evaluated := testEval(input)
+
+	_, ok := evaluated.(*object.Class)
+
+	if !ok {
+		t.Fatalf("object is not Class. got=%T (%+v)", evaluated, evaluated)
+	}
+}
+
 func TestFunctionObject(t *testing.T) {
 	input := "function(x) { x + 2; };"
 

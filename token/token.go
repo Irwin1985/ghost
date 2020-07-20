@@ -43,6 +43,7 @@ const (
 	LBRACKET = "["
 	RBRACKET = "]"
 
+	CLASS    = "CLASS"
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
 	TRUE     = "TRUE"
@@ -59,6 +60,7 @@ const (
 )
 
 var keywords = map[string]TokenType{
+	"class":    CLASS,
 	"function": FUNCTION,
 	"let":      LET,
 	"true":     TRUE,
