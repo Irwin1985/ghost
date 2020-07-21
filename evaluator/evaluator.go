@@ -5,6 +5,7 @@ import (
 
 	"ghostlang.org/ghost/ast"
 	"ghostlang.org/ghost/builtins"
+	"ghostlang.org/ghost/decimal"
 	"ghostlang.org/ghost/object"
 )
 
@@ -96,7 +97,9 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return right
 		}
 
-		return evalInfixExpression(node.Operator, left, right)
+		return evalInfixExpression(node, node.Operator, left, right, env)
+	case *ast.PostfixExpression:
+		return evalPostfixExpression(node, node.Operator, env)
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
 	case *ast.ListLiteral:
@@ -256,12 +259,12 @@ func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 	return &object.Number{Value: value}
 }
 
-func evalInfixExpression(operator string, left object.Object, right object.Object) object.Object {
+func evalInfixExpression(node *ast.InfixExpression, operator string, left object.Object, right object.Object, env *object.Environment) object.Object {
 	switch {
 	case left.Type() == object.BOOLEAN_OBJ && right.Type() == object.BOOLEAN_OBJ:
 		return evalBooleanInfixExpression(operator, left, right)
 	case left.Type() == object.NUMBER_OBJ && right.Type() == object.NUMBER_OBJ:
-		return evalNumberInfixExpression(operator, left, right)
+		return evalNumberInfixExpression(node, operator, left, right, env)
 	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
 		return evalStringInfixExpression(operator, left, right)
 	case operator == "==":
@@ -272,6 +275,49 @@ func evalInfixExpression(operator string, left object.Object, right object.Objec
 		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+	}
+}
+
+func evalPostfixExpression(node *ast.PostfixExpression, operator string, env *object.Environment) object.Object {
+	switch operator {
+	case "++":
+		value, ok := env.Get(node.Token.Literal)
+
+		if !ok {
+			return newError("Token literal %s is unknown", node.Token.Literal)
+		}
+
+		expression, ok := value.(*object.Number)
+
+		if !ok {
+			return newError("Invalid left-hand side expression in postfix operation")
+		}
+
+		one := decimal.NewFromInt(1)
+		decimal := &object.Number{Value: expression.Value.Add(one)}
+		env.Set(node.Token.Literal, decimal)
+
+		return decimal
+	case "--":
+		value, ok := env.Get(node.Token.Literal)
+
+		if !ok {
+			return newError("Token literal %s is unknown", node.Token.Literal)
+		}
+
+		expression, ok := value.(*object.Number)
+
+		if !ok {
+			return newError("Invalid left-hand side expression in postfix operation")
+		}
+
+		one := decimal.NewFromInt(1)
+		decimal := &object.Number{Value: expression.Value.Sub(one)}
+		env.Set(node.Token.Literal, decimal)
+
+		return decimal
+	default:
+		return newError("unknown operator: %s", operator)
 	}
 }
 
@@ -293,7 +339,7 @@ func evalBooleanInfixExpression(operator string, left object.Object, right objec
 	}
 }
 
-func evalNumberInfixExpression(operator string, left object.Object, right object.Object) object.Object {
+func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left object.Object, right object.Object, env *object.Environment) object.Object {
 	leftValue := left.(*object.Number).Value
 	rightValue := right.(*object.Number).Value
 
@@ -320,6 +366,50 @@ func evalNumberInfixExpression(operator string, left object.Object, right object
 		return nativeBoolToBooleanObject(leftValue.Equal(rightValue))
 	case "!=":
 		return nativeBoolToBooleanObject(!leftValue.Equal(rightValue))
+	case "+=":
+		_, ok := env.Get(node.Left.String())
+
+		if !ok {
+			return newError("Variable %s is unknown", node.Left.String())
+		}
+
+		decimal := &object.Number{Value: leftValue.Add(rightValue)}
+		env.Set(node.Left.String(), decimal)
+
+		return NULL
+	case "-=":
+		_, ok := env.Get(node.Left.String())
+
+		if !ok {
+			return newError("Variable %s is unknown", node.Left.String())
+		}
+
+		decimal := &object.Number{Value: leftValue.Sub(rightValue)}
+		env.Set(node.Left.String(), decimal)
+
+		return NULL
+	case "*=":
+		_, ok := env.Get(node.Left.String())
+
+		if !ok {
+			return newError("Variable %s is unknown", node.Left.String())
+		}
+
+		decimal := &object.Number{Value: leftValue.Mul(rightValue)}
+		env.Set(node.Left.String(), decimal)
+
+		return NULL
+	case "/=":
+		_, ok := env.Get(node.Left.String())
+
+		if !ok {
+			return newError("Variable %s is unknown", node.Left.String())
+		}
+
+		decimal := &object.Number{Value: leftValue.Div(rightValue)}
+		env.Set(node.Left.String(), decimal)
+
+		return NULL
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}

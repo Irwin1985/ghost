@@ -55,8 +55,16 @@ const (
 	AND      = "AND"
 	OR       = "OR"
 
-	EQ     = "=="
-	NOT_EQ = "!="
+	EQ    = "=="
+	NOTEQ = "!="
+
+	PLUSASSIGN     = "+="
+	MINUSASSIGN    = "-="
+	ASTERISKASSIGN = "*="
+	SLASHASSIGN    = "/="
+
+	PLUSPLUS   = "++"
+	MINUSMINUS = "--"
 )
 
 var keywords = map[string]TokenType{
